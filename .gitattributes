@@ -1,0 +1,6 @@
+# Force GitHub to recognize these files as C++
+*.cpp linguist-language=C++
+*.cxx linguist-language=C++
+*.cc  linguist-language=C++
+*.hpp linguist-language=C++
+*.h   linguist-language=C++
