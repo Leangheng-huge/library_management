@@ -5,3 +5,9 @@
 *.hpp linguist-language=C++
 *.h   linguist-language=C++
 sqlite3.c linguist-generated
+# Ignore sqlite3.c in language stats
+sqlite3.c linguist-generated
+
+# Treat C++ files as C++ explicitly
+*.cpp linguist-language=C++
+*.h   linguist-language=C++
