@@ -4,3 +4,4 @@
 *.cc  linguist-language=C++
 *.hpp linguist-language=C++
 *.h   linguist-language=C++
+sqlite3.c linguist-generated
