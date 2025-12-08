@@ -13,6 +13,7 @@ struct Book {
     string author;
     string isbn;
     int quantity;
+    bool needsSave;
 };
 
 class LibrarySystem {
@@ -49,6 +50,7 @@ private:
                 book.author = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
                 book.isbn = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
                 book.quantity = sqlite3_column_int(stmt, 4);
+                book.needsSave = false;
                 books.push_back(book);
 
                 if (book.id >= nextId) {
@@ -89,6 +91,7 @@ public:
     void addBook() {
         Book book;
         book.id = nextId++;
+        book.needsSave = true;
 
         cin.ignore();
         cout << "\nEnter Book ID: " << book.id << " (auto-generated)" << endl;
@@ -102,19 +105,7 @@ public:
         cin >> book.quantity;
 
         books.push_back(book);
-
-        string sql = "INSERT INTO books (id, title, author, isbn, quantity) VALUES (" +
-                     to_string(book.id) + ", '" + book.title + "', '" +
-                     book.author + "', '" + book.isbn + "', " +
-                     to_string(book.quantity) + ");";
-
-        if (executeSQL(sql)) {
-            cout << "\n✓ Book added successfully!" << endl;
-        } else {
-            books.pop_back();
-            nextId--;
-            cout << "\n✗ Failed to add book to database!" << endl;
-        }
+        cout << "\n✓ Book added to memory! (Remember to save)" << endl;
     }
 
     void editBook() {
@@ -155,17 +146,8 @@ public:
         cin >> qty;
         if (qty >= 0) it->quantity = qty;
 
-        string sql = "UPDATE books SET title='" + it->title +
-                     "', author='" + it->author +
-                     "', isbn='" + it->isbn +
-                     "', quantity=" + to_string(it->quantity) +
-                     " WHERE id=" + to_string(bookId) + ";";
-
-        if (executeSQL(sql)) {
-            cout << "\n✓ Book updated successfully!" << endl;
-        } else {
-            cout << "\n✗ Failed to update book!" << endl;
-        }
+        it->needsSave = true;
+        cout << "\n✓ Book updated in memory! (Remember to save)" << endl;
     }
 
     void deleteBook() {
@@ -195,10 +177,11 @@ public:
             cin >> confirm;
 
             if (confirm == 'y' || confirm == 'Y') {
+
                 string sql = "DELETE FROM books WHERE id=" + to_string(bookId) + ";";
                 if (executeSQL(sql)) {
                     books.erase(it);
-                    cout << "\n✓ Book deleted successfully!" << endl;
+                    cout << "\n✓ Book deleted successfully from database!" << endl;
                 } else {
                     cout << "\n✗ Failed to delete book!" << endl;
                 }
@@ -209,10 +192,11 @@ public:
             cin >> confirm;
 
             if (confirm == 'y' || confirm == 'Y') {
+
                 if (executeSQL("DELETE FROM books;")) {
                     books.clear();
                     nextId = 1;
-                    cout << "\n✓ All books deleted successfully!" << endl;
+                    cout << "\n✓ All books deleted successfully from database!" << endl;
                 } else {
                     cout << "\n✗ Failed to delete books!" << endl;
                 }
@@ -293,8 +277,53 @@ public:
     }
 
     void saveData() {
-        cout << "\n✓ Data is automatically saved to 'library.db'" << endl;
-        cout << "Current books in memory: " << books.size() << endl;
+        int savedCount = 0;
+        int updatedCount = 0;
+
+        for (auto& book : books) {
+            if (book.needsSave) {
+
+                string checkSql = "SELECT id FROM books WHERE id=" + to_string(book.id) + ";";
+                sqlite3_stmt* stmt;
+                bool exists = false;
+
+                if (sqlite3_prepare_v2(db, checkSql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+                    if (sqlite3_step(stmt) == SQLITE_ROW) {
+                        exists = true;
+                    }
+                }
+                sqlite3_finalize(stmt);
+
+                string sql;
+                if (exists) {
+                    // Update existing book
+                    sql = "UPDATE books SET title='" + book.title +
+                          "', author='" + book.author +
+                          "', isbn='" + book.isbn +
+                          "', quantity=" + to_string(book.quantity) +
+                          " WHERE id=" + to_string(book.id) + ";";
+                    if (executeSQL(sql)) {
+                        updatedCount++;
+                        book.needsSave = false;
+                    }
+                } else {
+                    // Insert new book
+                    sql = "INSERT INTO books (id, title, author, isbn, quantity) VALUES (" +
+                          to_string(book.id) + ", '" + book.title + "', '" +
+                          book.author + "', '" + book.isbn + "', " +
+                          to_string(book.quantity) + ");";
+                    if (executeSQL(sql)) {
+                        savedCount++;
+                        book.needsSave = false;
+                    }
+                }
+            }
+        }
+
+        cout << "\n✓ Save completed!" << endl;
+        cout << "New books saved: " << savedCount << endl;
+        cout << "Books updated: " << updatedCount << endl;
+        cout << "Total books in database: " << books.size() << endl;
     }
 
     void displayMenu() {
@@ -338,7 +367,7 @@ public:
                     saveData();
                     break;
                 case 7:
-                    cout << "\nSaving and exiting..." << endl;
+                    cout << "\nExiting..." << endl;
                     cout << "Thank you for using Library Management System!" << endl;
                     return;
                 default:
