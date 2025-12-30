@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 #include <iomanip>
 #include <algorithm>
+#include <limits>
 
 using namespace std;
 
@@ -93,16 +94,47 @@ public:
         book.id = nextId++;
         book.needsSave = true;
 
-        cin.ignore();
-        cout << "\nEnter Book ID: " << book.id << endl;
-        cout << "Enter Title: ";
-        getline(cin, book.title);
-        cout << "Enter Author: ";
-        getline(cin, book.author);
-        cout << "Enter ISBN: ";
-        getline(cin, book.isbn);
-        cout << "Enter Quantity: ";
-        cin >> book.quantity;
+        cout << "\nBook ID: " << book.id << endl;
+
+        while (true) {
+            cout << "Enter Title: ";
+            getline(cin, book.title);
+            if (!book.title.empty()) {
+                break;
+            }
+            cout << "*Title cannot be empty. Title is require." << endl;
+        }
+
+        while (true) {
+            cout << "Enter Author: ";
+            getline(cin, book.author);
+            if (!book.author.empty()) {
+                break;
+            }
+            cout << "*Author cannot be empty. Author is needed." << endl;
+        }
+
+        while (true) {
+            cout << "Enter ISBN: ";
+            getline(cin, book.isbn);
+            if (!book.isbn.empty()) {
+                break;
+            }
+            cout << "*ISBN cannot be empty. ISBN is mandatory ." << endl;
+        }
+
+        while (true) {
+            cout << "Enter Quantity: ";
+            cin >> book.quantity;
+            if (cin.fail() || book.quantity < 0) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "*Invalid quantity. Please enter a valid number (0 or greater)." << endl;
+            } else {
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                break;
+            }
+        }
 
         books.push_back(book);
         cout << "\n✓ Book added to memory! (Remember to save)" << endl;
@@ -112,6 +144,7 @@ public:
         int bookId;
         cout << "\nEnter Book ID to Edit: ";
         cin >> bookId;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         auto it = find_if(books.begin(), books.end(),
                          [bookId](const Book& b) { return b.id == bookId; });
@@ -127,7 +160,6 @@ public:
         cout << "ISBN: " << it->isbn << endl;
         cout << "Quantity: " << it->quantity << endl;
 
-        cin.ignore();
         cout << "\nEnter New Title (or press Enter to keep current): ";
         string input;
         getline(cin, input);
@@ -141,10 +173,26 @@ public:
         getline(cin, input);
         if (!input.empty()) it->isbn = input;
 
-        cout << "Enter New Quantity (or -1 to keep current): ";
-        int qty;
-        cin >> qty;
-        if (qty >= 0) it->quantity = qty;
+        while (true) {
+            cout << "Enter New Quantity (or -1 to keep current): ";
+            int qty;
+            cin >> qty;
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "*Invalid input. Please enter a valid number." << endl;
+            } else {
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                if (qty == -1) {
+                    break;
+                } else if (qty >= 0) {
+                    it->quantity = qty;
+                    break;
+                } else {
+                    cout << "*Quantity cannot be negative. Please try again." << endl;
+                }
+            }
+        }
 
         it->needsSave = true;
         cout << "\n✓ Book updated in memory! (Remember to save)" << endl;
@@ -158,11 +206,13 @@ public:
 
         int choice;
         cin >> choice;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         if (choice == 1) {
             int bookId;
             cout << "Enter Book ID to Delete: ";
             cin >> bookId;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             auto it = find_if(books.begin(), books.end(),
                              [bookId](const Book& b) { return b.id == bookId; });
@@ -175,9 +225,9 @@ public:
             cout << "Are you sure you want to delete '" << it->title << "'? (y/n): ";
             char confirm;
             cin >> confirm;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             if (confirm == 'y' || confirm == 'Y') {
-
                 string sql = "DELETE FROM books WHERE id=" + to_string(bookId) + ";";
                 if (executeSQL(sql)) {
                     books.erase(it);
@@ -190,9 +240,9 @@ public:
             cout << "Are you sure you want to delete ALL books? (y/n): ";
             char confirm;
             cin >> confirm;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             if (confirm == 'y' || confirm == 'Y') {
-
                 if (executeSQL("DELETE FROM books;")) {
                     books.clear();
                     nextId = 1;
@@ -213,7 +263,7 @@ public:
 
         int choice;
         cin >> choice;
-        cin.ignore();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         vector<Book> results;
 
@@ -221,6 +271,7 @@ public:
             int id;
             cout << "Enter Book ID: ";
             cin >> id;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             copy_if(books.begin(), books.end(), back_inserter(results),
                    [id](const Book& b) { return b.id == id; });
         } else if (choice == 2) {
@@ -282,7 +333,6 @@ public:
 
         for (auto& book : books) {
             if (book.needsSave) {
-
                 string checkSql = "SELECT id FROM books WHERE id=" + to_string(book.id) + ";";
                 sqlite3_stmt* stmt;
                 bool exists = false;
@@ -296,7 +346,6 @@ public:
 
                 string sql;
                 if (exists) {
-                    // Update existing book
                     sql = "UPDATE books SET title='" + book.title +
                           "', author='" + book.author +
                           "', isbn='" + book.isbn +
@@ -307,7 +356,6 @@ public:
                         book.needsSave = false;
                     }
                 } else {
-                    // Insert new book
                     sql = "INSERT INTO books (id, title, author, isbn, quantity) VALUES (" +
                           to_string(book.id) + ", '" + book.title + "', '" +
                           book.author + "', '" + book.isbn + "', " +
@@ -346,6 +394,7 @@ public:
         while (true) {
             displayMenu();
             cin >> choice;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             switch (choice) {
                 case 1:
