@@ -94,7 +94,7 @@ public:
         book.needsSave = true;
 
         cin.ignore();
-        cout << "\nEnter Book ID: " << book.id << " (auto-generated)" << endl;
+        cout << "\nEnter Book ID: " << book.id << endl;
         cout << "Enter Title: ";
         getline(cin, book.title);
         cout << "Enter Author: ";
