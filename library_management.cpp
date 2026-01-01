@@ -5,12 +5,10 @@
 #include <iomanip>
 #include <algorithm>
 #include <limits>
-#include <cstdlib>
 #include <ctime>
 
 using namespace std;
 
-// ANSI color codes
 const string RESET = "\033[0m";
 const string RED = "\033[31m";
 const string GREEN = "\033[32m";
