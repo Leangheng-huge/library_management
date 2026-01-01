@@ -5,8 +5,22 @@
 #include <iomanip>
 #include <algorithm>
 #include <limits>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
+
+// ANSI color codes
+const string RESET = "\033[0m";
+const string RED = "\033[31m";
+const string GREEN = "\033[32m";
+const string YELLOW = "\033[33m";
+const string BLUE = "\033[34m";
+const string MAGENTA = "\033[35m";
+const string CYAN = "\033[36m";
+const string WHITE = "\033[37m";
+const string BOLD = "\033[1m";
+const string BG_DARK = "\033[40m";
 
 struct Book {
     int id;
@@ -22,9 +36,42 @@ private:
     vector<Book> books;
     sqlite3* db;
     int nextId;
+    vector<string> colors = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN};
 
     static int callback(void* data, int argc, char** argv, char** azColName) {
         return 0;
+    }
+
+    string getRandomColor() {
+        return colors[rand() % colors.size()];
+    }
+
+    void printHeader() {
+        #ifdef _WIN32
+            system("cls");
+        #else
+            system("clear");
+        #endif
+        string color = getRandomColor();
+
+        cout << color << BOLD;
+        cout << "\n";
+        cout << " ╦  ╦╔╗ ╦═╗╔═╗╦═╗╦ ╦  ╔╦╗╔═╗╔╗╔╔═╗╔═╗╔═╗╔╦╗╔═╗╔╗╔╔╦╗\n";
+        cout << " ║  ║╠╩╗╠╦╝╠═╣╠╦╝╚╦╝  ║║║╠═╣║║║╠═╣║ ╦║╣ ║║║║╣ ║║║ ║ \n";
+        cout << " ╩═╝╩╚═╝╩╚═╩ ╩╩╚═ ╩   ╩ ╩╩ ╩╝╚╝╩ ╩╚═╝╚═╝╩ ╩╚═╝╝╚╝ ╩ \n";
+        cout << RESET;
+
+        cout << CYAN << "\n ════════════════════════════════════════════════════\n" << RESET;
+        cout << YELLOW << "    📚 Welcome to the Digital Library System 📚\n" << RESET;
+        cout << CYAN << " ════════════════════════════════════════════════════\n" << RESET;
+    }
+
+    void printBox(const string& text, const string& color = CYAN) {
+        int width = 50;
+        cout << color << " ╔" << string(width, '═') << "╗\n";
+        cout << " ║" << BOLD << setw((width + text.length()) / 2) << text
+             << setw(width - (width + text.length()) / 2) << "" << RESET << color << "║\n";
+        cout << " ╚" << string(width, '═') << "╝" << RESET << "\n";
     }
 
     bool executeSQL(const string& sql) {
@@ -32,7 +79,7 @@ private:
         int rc = sqlite3_exec(db, sql.c_str(), callback, 0, &errMsg);
 
         if (rc != SQLITE_OK) {
-            cerr << "SQL error: " << errMsg << endl;
+            cout << RED << " ✗ SQL error: " << errMsg << RESET << endl;
             sqlite3_free(errMsg);
             return false;
         }
@@ -64,10 +111,12 @@ private:
 
 public:
     LibrarySystem() : db(nullptr), nextId(1) {
+        srand(time(0));
+
         int rc = sqlite3_open("library.db", &db);
 
         if (rc) {
-            cerr << "Can't open database: " << sqlite3_errmsg(db) << endl;
+            cerr << RED << " ✗ Can't open database: " << sqlite3_errmsg(db) << RESET << endl;
             exit(1);
         }
 
@@ -90,46 +139,49 @@ public:
     }
 
     void addBook() {
+        printHeader();
+        printBox("ADD NEW BOOK", GREEN);
+
         Book book;
         book.id = nextId++;
         book.needsSave = true;
 
-        cout << "\nBook ID: " << book.id << endl;
+        cout << GREEN << "\n 📖 Book ID: " << BOLD << book.id << RESET << endl;
 
         while (true) {
-            cout << "Enter Title: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Title: ";
             getline(cin, book.title);
             if (!book.title.empty()) {
                 break;
             }
-            cout << "*Title cannot be empty. Title is require." << endl;
+            cout << RED << " ✗ Title cannot be empty!" << RESET << endl;
         }
 
         while (true) {
-            cout << "Enter Author: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Author: ";
             getline(cin, book.author);
             if (!book.author.empty()) {
                 break;
             }
-            cout << "*Author cannot be empty. Author is needed." << endl;
+            cout << RED << " ✗ Author cannot be empty!" << RESET << endl;
         }
 
         while (true) {
-            cout << "Enter ISBN: ";
+            cout << CYAN << " ▸ " << RESET << "Enter ISBN: ";
             getline(cin, book.isbn);
             if (!book.isbn.empty()) {
                 break;
             }
-            cout << "*ISBN cannot be empty. ISBN is mandatory ." << endl;
+            cout << RED << " ✗ ISBN cannot be empty!" << RESET << endl;
         }
 
         while (true) {
-            cout << "Enter Quantity: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Quantity: ";
             cin >> book.quantity;
             if (cin.fail() || book.quantity < 0) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "*Invalid quantity. Please enter a valid number (0 or greater)." << endl;
+                cout << RED << " ✗ Invalid quantity!" << RESET << endl;
             } else {
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 break;
@@ -137,12 +189,17 @@ public:
         }
 
         books.push_back(book);
-        cout << "\n✓ Book added to memory! (Remember to save)" << endl;
+        cout << GREEN << "\n ✓ Book added successfully! (Remember to save)" << RESET << endl;
+        cout << "\n Press Enter to continue...";
+        cin.get();
     }
 
     void editBook() {
+        printHeader();
+        printBox("EDIT BOOK", YELLOW);
+
         int bookId;
-        cout << "\nEnter Book ID to Edit: ";
+        cout << CYAN << "\n ▸ " << RESET << "Enter Book ID to Edit: ";
         cin >> bookId;
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
@@ -150,37 +207,39 @@ public:
                          [bookId](const Book& b) { return b.id == bookId; });
 
         if (it == books.end()) {
-            cout << "\n✗ Book not found!" << endl;
+            cout << RED << "\n ✗ Book not found!" << RESET << endl;
+            cout << "\n Press Enter to continue...";
+            cin.get();
             return;
         }
 
-        cout << "\nCurrent Book Information:" << endl;
-        cout << "Title: " << it->title << endl;
-        cout << "Author: " << it->author << endl;
-        cout << "ISBN: " << it->isbn << endl;
-        cout << "Quantity: " << it->quantity << endl;
+        cout << YELLOW << "\n Current Information:" << RESET << endl;
+        cout << " Title: " << BOLD << it->title << RESET << endl;
+        cout << " Author: " << BOLD << it->author << RESET << endl;
+        cout << " ISBN: " << BOLD << it->isbn << RESET << endl;
+        cout << " Quantity: " << BOLD << it->quantity << RESET << endl;
 
-        cout << "\nEnter New Title (or press Enter to keep current): ";
+        cout << CYAN << "\n ▸ " << RESET << "New Title (Enter to keep): ";
         string input;
         getline(cin, input);
         if (!input.empty()) it->title = input;
 
-        cout << "Enter New Author (or press Enter to keep current): ";
+        cout << CYAN << " ▸ " << RESET << "New Author (Enter to keep): ";
         getline(cin, input);
         if (!input.empty()) it->author = input;
 
-        cout << "Enter New ISBN (or press Enter to keep current): ";
+        cout << CYAN << " ▸ " << RESET << "New ISBN (Enter to keep): ";
         getline(cin, input);
         if (!input.empty()) it->isbn = input;
 
         while (true) {
-            cout << "Enter New Quantity (or -1 to keep current): ";
+            cout << CYAN << " ▸ " << RESET << "New Quantity (-1 to keep): ";
             int qty;
             cin >> qty;
             if (cin.fail()) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "*Invalid input. Please enter a valid number." << endl;
+                cout << RED << " ✗ Invalid input!" << RESET << endl;
             } else {
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 if (qty == -1) {
@@ -189,20 +248,24 @@ public:
                     it->quantity = qty;
                     break;
                 } else {
-                    cout << "*Quantity cannot be negative. Please try again." << endl;
+                    cout << RED << " ✗ Quantity cannot be negative!" << RESET << endl;
                 }
             }
         }
 
         it->needsSave = true;
-        cout << "\n✓ Book updated in memory! (Remember to save)" << endl;
+        cout << GREEN << "\n ✓ Book updated! (Remember to save)" << RESET << endl;
+        cout << "\n Press Enter to continue...";
+        cin.get();
     }
 
     void deleteBook() {
-        cout << "\nDelete Options:" << endl;
-        cout << "1. Delete Single Book" << endl;
-        cout << "2. Delete All Books" << endl;
-        cout << "Enter choice: ";
+        printHeader();
+        printBox("DELETE BOOK", RED);
+
+        cout << "\n" << YELLOW << " [1]" << RESET << " Delete Single Book\n";
+        cout << YELLOW << " [2]" << RESET << " Delete All Books\n";
+        cout << CYAN << "\n ▸ " << RESET << "Enter choice: ";
 
         int choice;
         cin >> choice;
@@ -210,7 +273,7 @@ public:
 
         if (choice == 1) {
             int bookId;
-            cout << "Enter Book ID to Delete: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Book ID: ";
             cin >> bookId;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
@@ -218,11 +281,13 @@ public:
                              [bookId](const Book& b) { return b.id == bookId; });
 
             if (it == books.end()) {
-                cout << "\n✗ Book not found!" << endl;
+                cout << RED << "\n ✗ Book not found!" << RESET << endl;
+                cout << "\n Press Enter to continue...";
+                cin.get();
                 return;
             }
 
-            cout << "Are you sure you want to delete '" << it->title << "'? (y/n): ";
+            cout << RED << "\n ⚠ Delete '" << it->title << "'? (y/n): " << RESET;
             char confirm;
             cin >> confirm;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -231,13 +296,11 @@ public:
                 string sql = "DELETE FROM books WHERE id=" + to_string(bookId) + ";";
                 if (executeSQL(sql)) {
                     books.erase(it);
-                    cout << "\n✓ Book deleted successfully from database!" << endl;
-                } else {
-                    cout << "\n✗ Failed to delete book!" << endl;
+                    cout << GREEN << "\n ✓ Book deleted!" << RESET << endl;
                 }
             }
         } else if (choice == 2) {
-            cout << "Are you sure you want to delete ALL books? (y/n): ";
+            cout << RED << "\n ⚠ Delete ALL books? (y/n): " << RESET;
             char confirm;
             cin >> confirm;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -246,20 +309,22 @@ public:
                 if (executeSQL("DELETE FROM books;")) {
                     books.clear();
                     nextId = 1;
-                    cout << "\n✓ All books deleted successfully from database!" << endl;
-                } else {
-                    cout << "\n✗ Failed to delete books!" << endl;
+                    cout << GREEN << "\n ✓ All books deleted!" << RESET << endl;
                 }
             }
         }
+        cout << "\n Press Enter to continue...";
+        cin.get();
     }
 
     void searchBook() {
-        cout << "\nSearch By:" << endl;
-        cout << "1. Book ID" << endl;
-        cout << "2. Title" << endl;
-        cout << "3. Author" << endl;
-        cout << "Enter choice: ";
+        printHeader();
+        printBox("SEARCH BOOKS", MAGENTA);
+
+        cout << "\n" << YELLOW << " [1]" << RESET << " By Book ID\n";
+        cout << YELLOW << " [2]" << RESET << " By Title\n";
+        cout << YELLOW << " [3]" << RESET << " By Author\n";
+        cout << CYAN << "\n ▸ " << RESET << "Enter choice: ";
 
         int choice;
         cin >> choice;
@@ -269,14 +334,14 @@ public:
 
         if (choice == 1) {
             int id;
-            cout << "Enter Book ID: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Book ID: ";
             cin >> id;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             copy_if(books.begin(), books.end(), back_inserter(results),
                    [id](const Book& b) { return b.id == id; });
         } else if (choice == 2) {
             string title;
-            cout << "Enter Title: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Title: ";
             getline(cin, title);
             copy_if(books.begin(), books.end(), back_inserter(results),
                    [&title](const Book& b) {
@@ -284,7 +349,7 @@ public:
                    });
         } else if (choice == 3) {
             string author;
-            cout << "Enter Author: ";
+            cout << CYAN << " ▸ " << RESET << "Enter Author: ";
             getline(cin, author);
             copy_if(books.begin(), books.end(), back_inserter(results),
                    [&author](const Book& b) {
@@ -293,43 +358,59 @@ public:
         }
 
         if (results.empty()) {
-            cout << "\n✗ No matching books found!" << endl;
+            cout << RED << "\n ✗ No matching books found!" << RESET << endl;
         } else {
             displayBooks(results);
         }
+        cout << "\n Press Enter to continue...";
+        cin.get();
     }
 
     void displayBooks(const vector<Book>& bookList) {
-        cout << "\n" << string(85, '=') << endl;
-        cout << left << setw(5) << "ID"
-             << setw(25) << "Title"
-             << setw(20) << "Author"
+        cout << "\n" << CYAN << " ╔" << string(95, '═') << "╗" << RESET << endl;
+        cout << CYAN << " ║ " << RESET << BOLD << left << setw(5) << "ID"
+             << setw(28) << "Title"
+             << setw(22) << "Author"
              << setw(20) << "ISBN"
-             << setw(10) << "Quantity" << endl;
-        cout << string(85, '=') << endl;
+             << setw(10) << "Quantity" << RESET << CYAN << "   ║" << RESET << endl;
+        cout << CYAN << " ╠" << string(95, '═') << "╣" << RESET << endl;
 
         for (const auto& book : bookList) {
-            cout << left << setw(5) << book.id
-                 << setw(25) << book.title.substr(0, 24)
-                 << setw(20) << book.author.substr(0, 19)
-                 << setw(20) << book.isbn
-                 << setw(10) << book.quantity << endl;
+            cout << CYAN << " ║ " << RESET << left
+                 << GREEN << setw(5) << book.id << RESET
+                 << setw(28) << book.title.substr(0, 27)
+                 << setw(22) << book.author.substr(0, 21)
+                 << YELLOW << setw(20) << book.isbn << RESET
+                 << MAGENTA << setw(10) << book.quantity << RESET
+                 << CYAN << "   ║" << RESET << endl;
         }
-        cout << string(85, '=') << endl;
-        cout << "Total Books: " << bookList.size() << endl;
+        cout << CYAN << " ╚" << string(95, '═') << "╝" << RESET << endl;
+        cout << BOLD << " 📚 Total Books: " << bookList.size() << RESET << endl;
     }
 
     void showAllBooks() {
+        printHeader();
+        printBox("ALL BOOKS IN LIBRARY", BLUE);
+
         if (books.empty()) {
-            cout << "\n✗ Library is empty!" << endl;
+            cout << RED << "\n ✗ Library is empty!" << RESET << endl;
+            cout << "\n Press Enter to continue...";
+            cin.get();
         } else {
             displayBooks(books);
+            cout << "\n Press Enter to continue...";
+            cin.get();
         }
     }
 
     void saveData() {
+        printHeader();
+        printBox("SAVING DATA", GREEN);
+
         int savedCount = 0;
         int updatedCount = 0;
+
+        cout << YELLOW << "\n ⏳ Saving changes..." << RESET << endl;
 
         for (auto& book : books) {
             if (book.needsSave) {
@@ -368,24 +449,32 @@ public:
             }
         }
 
-        cout << "\n✓ Save completed!" << endl;
-        cout << "New books saved: " << savedCount << endl;
-        cout << "Books updated: " << updatedCount << endl;
-        cout << "Total books in database: " << books.size() << endl;
+        cout << GREEN << "\n ✓ Save completed!" << RESET << endl;
+        cout << CYAN << " ▸ " << RESET << "New books saved: " << BOLD << savedCount << RESET << endl;
+        cout << CYAN << " ▸ " << RESET << "Books updated: " << BOLD << updatedCount << RESET << endl;
+        cout << CYAN << " ▸ " << RESET << "Total in database: " << BOLD << books.size() << RESET << endl;
+        cout << "\n Press Enter to continue...";
+        cin.get();
     }
 
     void displayMenu() {
-        cout << "\n╔══════════════════════════════════╗" << endl;
-        cout << "║   LIBRARY MANAGEMENT SYSTEM      ║" << endl;
-        cout << "╚══════════════════════════════════╝" << endl;
-        cout << "1. Add Book" << endl;
-        cout << "2. Edit Book" << endl;
-        cout << "3. Delete Book" << endl;
-        cout << "4. Search Book" << endl;
-        cout << "5. Show All Books" << endl;
-        cout << "6. Save Data" << endl;
-        cout << "7. Exit" << endl;
-        cout << "\nEnter your choice: ";
+        printHeader();
+
+        cout << "\n";
+        cout << CYAN << " ┌─────────────────────────────────────────────────┐\n" << RESET;
+        cout << CYAN << " │" << RESET << BOLD << "              MAIN MENU OPTIONS                  " << RESET << CYAN << "│\n" << RESET;
+        cout << CYAN << " └─────────────────────────────────────────────────┘\n" << RESET;
+
+        cout << "\n";
+        cout << GREEN << "  [1] " << RESET << "📖 Add Book\n";
+        cout << YELLOW << "  [2] " << RESET << "✏️  Edit Book\n";
+        cout << RED << "  [3] " << RESET << "🗑️  Delete Book\n";
+        cout << MAGENTA << "  [4] " << RESET << "🔍 Search Book\n";
+        cout << BLUE << "  [5] " << RESET << "📚 Show All Books\n";
+        cout << GREEN << "  [6] " << RESET << "💾 Save Data\n";
+        cout << RED << "  [7] " << RESET << "🚪 Exit\n";
+
+        cout << "\n" << CYAN << " ▸ " << RESET << "Enter your choice: ";
     }
 
     void run() {
@@ -416,11 +505,16 @@ public:
                     saveData();
                     break;
                 case 7:
-                    cout << "\nExiting..." << endl;
-                    cout << "Thank you for using Library Management System!" << endl;
+                    printHeader();
+                    printBox("THANK YOU!", GREEN);
+                    cout << GREEN << "\n ✓ Exiting Library Management System...\n" << RESET;
+                    cout << CYAN << "   See you next time! 📚✨\n\n" << RESET;
                     return;
                 default:
-                    cout << "\n✗ Invalid choice! Please try again." << endl;
+                    printHeader();
+                    cout << RED << "\n ✗ Invalid choice! Please try again." << RESET << endl;
+                    cout << "\n Press Enter to continue...";
+                    cin.get();
             }
         }
     }
