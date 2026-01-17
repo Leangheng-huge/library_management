@@ -504,7 +504,7 @@ public:
                 case 7:
                     printHeader();
                     printBox("THANK YOU!", GREEN);
-                    cout << GREEN << "\n ✓ Exiting Library Management System...\n" << RESET;
+                    cout << GREEN << "\n ✓ Exiting Library Management System...😈😈\n" << RESET;
                     cout << CYAN << "   See you next time! 📚✨\n\n" << RESET;
                     return;
                 default:
