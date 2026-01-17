@@ -507,7 +507,7 @@ public:
                     cout << GREEN << "\n ✓ Exiting Library Management System...🥰🥰\n" << RESET;
                     cout << CYAN << "   See you next time! 📚✨\n\n" << RESET;
 
-                    printBox(" <1$> QUESTION 😈",RED);
+                    printBox(" <1$> PER QUESTION 😈",RED);
                     cout<<YELLOW<<"（づ￣3￣）づ╭❤️～";
 
                     return;
