@@ -503,9 +503,13 @@ public:
                     break;
                 case 7:
                     printHeader();
-                    printBox("THANK YOU!", GREEN);
-                    cout << GREEN << "\n ✓ Exiting Library Management System...😈😈\n" << RESET;
+                    printBox("THANK YOU!🤑🤑", GREEN);
+                    cout << GREEN << "\n ✓ Exiting Library Management System...🥰🥰\n" << RESET;
                     cout << CYAN << "   See you next time! 📚✨\n\n" << RESET;
+
+                    printBox(" <1$> QUESTION 😈",RED);
+                    cout<<YELLOW<<"（づ￣3￣）づ╭❤️～";
+
                     return;
                 default:
                     printHeader();
