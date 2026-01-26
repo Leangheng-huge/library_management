@@ -44,11 +44,7 @@ private:
     }
 
     void printHeader() {
-        #ifdef _WIN32
-            system("cls");
-        #else
-            system("clear");
-        #endif
+
         string color = getRandomColor();
 
         cout << color << BOLD;
