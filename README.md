@@ -55,9 +55,6 @@ SQLite database (`library.db`) stores:
 **Leangheng Korn**
 - GitHub: [@Leangheng-huge](https://github.com/Leangheng-huge)
 
-## 📜 License
-
-MIT License - feel free to use and modify!
 
 ---
 
