@@ -4,7 +4,6 @@ A colorful command-line library management system built with C++ and SQLite3.
 
 ![C++](https://img.shields.io/badge/C++-11-blue.svg)
 ![SQLite](https://img.shields.io/badge/SQLite-3-green.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## ✨ Features
 
