@@ -75,10 +75,6 @@ The system uses an SQLite database file (`library.db`) containing:
 | ISBN     | TEXT         | ISBN number              |
 | Quantity | INTEGER      | Available copies         |
 
-## 📸 Screenshots
-
-*(Add screenshots of your application here)*
-
 ## 🛣 Roadmap
 
 - [ ] User authentication system
@@ -97,9 +93,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
 
 ##  Created By:
 
